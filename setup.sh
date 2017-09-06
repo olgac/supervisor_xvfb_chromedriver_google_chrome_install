@@ -27,11 +27,11 @@ fi
 chromedriver --version
 
 if [ ! -f /usr/bin/google-chrome ]; then
-    curl -o google-chrome-stable_60.0.3112.113-1_amd64.deb http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_61.0.3163.79-1_amd64.deb
-    echo "7e32ffb1941b64d91a5b6039015af1499f807ebf  google-chrome-stable_60.0.3112.113-1_amd64.deb" > google-chrome-stable_60.0.3112.113-1_amd64.sha1
-    if [[ $(sha1sum -c google-chrome-stable_60.0.3112.113-1_amd64.sha1 | grep OK | wc -l) -eq 1 ]]; then
+    curl -o google-chrome-stable_61.0.3163.79-1_amd64.deb http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_61.0.3163.79-1_amd64.deb
+    echo "6e1528625d403150fa2cfb15564a73bd8b39d821  google-chrome-stable_61.0.3163.79-1_amd64.deb" > google-chrome-stable_61.0.3163.79-1_amd64.sha1
+    if [[ $(sha1sum -c google-chrome-stable_61.0.3163.79-1_amd64.sha1 | grep OK | wc -l) -eq 1 ]]; then
         echo "google-chrome installation file sha1sum check is OK!"
-        dpkg -i google-chrome-stable_60.0.3112.113-1_amd64.deb
+        dpkg -i google-chrome-stable_61.0.3163.79-1_amd64.deb
         apt-get install -f -y
         echo "google-chrome installation SUCCESSFUL!"
     else
@@ -44,14 +44,17 @@ else
 fi
 google-chrome --version
 
-if ! pgrep -x "supervisord" > /dev/null; then
-    echo -e "[program:chromedriver]\ncommand=/usr/bin/chromedriver --verbose\nenvironment=DISPLAY=:99.0\npriority=0\nredirect_stderr=true\nstdout_logfile=/var/log/chromedriver.log\nstderr_logfile=/var/log/chromedriver-error.log" > /etc/supervisor/conf.d/chromedriver.conf
+if [[ ! -f /etc/supervisor/conf.d/chromedriver.conf || ! -f /etc/supervisor/conf.d/xvfb.conf ]]; then
+    echo -e "[program:chromedriver]\ncommand=/usr/bin/chromedriver --verbose --whitelisted-ips=''\nenvironment=DISPLAY=:99.0\npriority=0\nredirect_stderr=true\nstdout_logfile=/var/log/chromedriver.log\nstderr_logfile=/var/log/chromedriver-error.log" > /etc/supervisor/conf.d/chromedriver.conf
     echo -e "[program:xvfb]\ncommand=/usr/bin/Xvfb :99 -screen 0 1366x768x24 -terminate\nenvironment=DISPLAY=:99.0\npriority=10\nautorestart=true\nredirect_stderr=true\nstdout_logfile=/var/log/xvfb.log\nstderr_logfile=/var/log/xvfb-error.log" > /etc/supervisor/conf.d/xvfb.conf
+    service supervisor restart
+    echo "supervisor service RE-STARTED!"
+elif ! pgrep -x "supervisord" > /dev/null; then
     service supervisor start
     echo "supervisor service STARTED!"
 fi
 
-if [[ $(pgrep -x "chromedriver|Xvfb|supervisord" | wc -l) -eq 3 && -f /usr/bin/google-chrome ]]; then
+if [[ $(pgrep -x "chromedriver|Xvfb|supervisord" | wc -l) -eq 3 && -f /usr/bin/google-chrome && -f /usr/bin/chromedriver && -f /etc/supervisor/conf.d/chromedriver.conf && -f /etc/supervisor/conf.d/xvfb.conf ]]; then
     echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> SETUP is SUCCESSFUL!!!"
 fi
 echo "$(date) setup FINISHED"
