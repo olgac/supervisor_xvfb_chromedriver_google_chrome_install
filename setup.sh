@@ -2,6 +2,7 @@
 echo "$(date) setup STARTED"
 apt-get update
 apt-get install -y unzip curl xvfb supervisor
+iptables -I INPUT -p tcp --dport 9515 -j ACCEPT
 
 export DISPLAY=:99.0
 echo DISPLAY value is $DISPLAY
